@@ -1,0 +1,678 @@
+generator client {
+  provider = "prisma-client-js"
+  engineType = "binary"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Department {
+  createdAt       DateTime?      @map("created_at") @db.Timestamp(0)
+  updatedAt       DateTime?      @map("updated_at") @db.Timestamp(0)
+  deletedAt       DateTime?      @map("deleted_at") @db.Timestamp(0)
+  gambar          String?        @db.VarChar(255)
+  kepalaJurusanId BigInt?        @map("kepala_jurusan_id")
+  namaJurusan     String         @map("nama_jurusan") @db.VarChar(255)
+  id              BigInt         @id @default(autoincrement())
+  modules         Module[]
+  studentClasses  StudentClass[]
+  students        Student[]
+  teachers        Teacher[]
+
+  @@map("departments")
+}
+
+model Export {
+  id             BigInt    @id @default(autoincrement())
+  completedAt    DateTime? @map("completed_at") @db.Timestamp(0)
+  fileDisk       String    @map("file_disk") @db.VarChar(255)
+  fileName       String?   @map("file_name") @db.VarChar(255)
+  exporter       String    @db.VarChar(255)
+  processedRows  Int       @default(0) @map("processed_rows")
+  totalRows      Int       @map("total_rows")
+  successfulRows Int       @default(0) @map("successful_rows")
+  userId         BigInt    @map("user_id")
+  createdAt      DateTime? @map("created_at") @db.Timestamp(0)
+  updatedAt      DateTime? @map("updated_at") @db.Timestamp(0)
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("exports")
+}
+
+model FailedImportRow {
+  id              BigInt    @id @default(autoincrement())
+  data            Json
+  importId        BigInt    @map("import_id")
+  validationError String?   @map("validation_error")
+  createdAt       DateTime? @map("created_at") @db.Timestamp(0)
+  updatedAt       DateTime? @map("updated_at") @db.Timestamp(0)
+  import          Import    @relation(fields: [importId], references: [id], onDelete: Cascade)
+
+  @@map("failed_import_rows")
+}
+
+model Hari {
+  id        BigInt                       @id @default(autoincrement())
+  namaHari  String                       @unique @map("nama_hari") @db.VarChar(20)
+  urutan    Int
+  createdAt DateTime?                    @map("created_at") @db.Timestamp(0)
+  updatedAt DateTime?                    @map("updated_at") @db.Timestamp(0)
+  schedules ModuleStudentClassSchedule[]
+
+  @@map("haris")
+}
+
+model Import {
+  id               BigInt            @id @default(autoincrement())
+  completedAt      DateTime?         @map("completed_at") @db.Timestamp(0)
+  fileName         String            @map("file_name") @db.VarChar(255)
+  filePath         String            @map("file_path") @db.VarChar(255)
+  importer         String            @db.VarChar(255)
+  processedRows    Int               @default(0) @map("processed_rows")
+  totalRows        Int               @map("total_rows")
+  successfulRows   Int               @default(0) @map("successful_rows")
+  userId           BigInt            @map("user_id")
+  createdAt        DateTime?         @map("created_at") @db.Timestamp(0)
+  updatedAt        DateTime?         @map("updated_at") @db.Timestamp(0)
+  failedImportRows FailedImportRow[]
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("imports")
+}
+
+model Module {
+  createdAt    DateTime?            @map("created_at") @db.Timestamp(0)
+  updatedAt    DateTime?            @map("updated_at") @db.Timestamp(0)
+  deskripsi    String?
+  isAktif      Boolean              @default(true) @map("is_aktif")
+  judul        String               @db.VarChar(255)
+  jurusan      String?              @db.VarChar(255)
+  jurusanId    BigInt               @map("jurusan_id")
+  thumbnail    String?              @db.VarChar(255)
+  tingkatId    BigInt?              @map("tingkat_id")
+  id           BigInt               @id @default(autoincrement())
+  department   Department           @relation(fields: [jurusanId], references: [id])
+  tingkat      Tingkat?             @relation(fields: [tingkatId], references: [id])
+  studentLinks ModuleStudent[]
+  classLinks   ModuleStudentClass[]
+  teacherLinks ModuleTeacher[]
+  tingkatLinks ModuleTingkat[]
+
+  @@index([jurusanId], map: "modules_jurusan_id_index")
+  @@map("modules")
+}
+
+model ModuleStudent {
+  id        BigInt    @id @default(autoincrement())
+  studentId BigInt    @map("student_id")
+  moduleId  BigInt    @map("module_id")
+  createdAt DateTime? @map("created_at") @db.Timestamp(0)
+  updatedAt DateTime? @map("updated_at") @db.Timestamp(0)
+  module    Module    @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  student   Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([studentId], map: "modules_student_student_id_index")
+  @@index([moduleId], map: "modules_student_module_id_index")
+  @@map("modules_student")
+}
+
+model ModuleStudentClass {
+  id             BigInt                       @id @default(autoincrement())
+  moduleId       BigInt                       @map("module_id")
+  teacherId      BigInt?                      @map("teacher_id")
+  studentClassId BigInt?                      @map("student_class_id")
+  createdAt      DateTime?                    @map("created_at") @db.Timestamp(0)
+  updatedAt      DateTime?                    @map("updated_at") @db.Timestamp(0)
+  lessons        Lesson[]
+  schedules      ModuleStudentClassSchedule[]
+  module         Module                       @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  studentClass   StudentClass?                @relation(fields: [studentClassId], references: [id], onDelete: Cascade)
+  teacher        Teacher?                     @relation(fields: [teacherId], references: [id], onUpdate: SetNull)
+  quizzes        Quiz[]
+  sections       Section[]
+  tasks          Task[]
+
+  @@index([moduleId], map: "modules_student_class_module_id_index")
+  @@index([studentClassId], map: "modules_student_class_student_class_id_index")
+  @@index([teacherId], map: "modules_student_class_teacher_id_index")
+  @@map("modules_student_class")
+}
+
+model ModuleTeacher {
+  id        BigInt    @id @default(autoincrement())
+  moduleId  BigInt    @map("module_id")
+  teacherId BigInt    @map("teacher_id")
+  createdAt DateTime? @map("created_at") @db.Timestamp(0)
+  updatedAt DateTime? @map("updated_at") @db.Timestamp(0)
+  module    Module    @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  teacher   Teacher   @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+
+  @@index([moduleId], map: "modules_teacher_module_id_index")
+  @@index([teacherId], map: "modules_teacher_teacher_id_index")
+  @@map("modules_teacher")
+}
+
+model ModuleTingkat {
+  id        BigInt    @id @default(autoincrement())
+  moduleId  BigInt    @map("module_id")
+  tingkatId BigInt    @map("tingkat_id")
+  createdAt DateTime? @map("created_at") @db.Timestamp(0)
+  updatedAt DateTime? @map("updated_at") @db.Timestamp(0)
+  module    Module    @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  tingkat   Tingkat   @relation(fields: [tingkatId], references: [id], onDelete: Cascade)
+
+  @@unique([moduleId, tingkatId], map: "modules_tingkat_unique_module_tingkat")
+  @@index([tingkatId], map: "modules_tingkat_tingkat_index")
+  @@map("modules_tingkat")
+}
+
+model ModuleStudentClassSchedule {
+  id                   BigInt             @id @default(autoincrement())
+  moduleStudentClassId BigInt             @map("module_student_class_id")
+  hariId               BigInt             @map("hari_id")
+  rentangJamId         BigInt             @map("rentang_jam_id")
+  createdAt            DateTime?          @map("created_at") @db.Timestamp(0)
+  updatedAt            DateTime?          @map("updated_at") @db.Timestamp(0)
+  hari                 Hari               @relation(fields: [hariId], references: [id], onDelete: Cascade)
+  moduleStudentClass   ModuleStudentClass @relation(fields: [moduleStudentClassId], references: [id], onDelete: Cascade)
+  rentangJam           RentangJam         @relation(fields: [rentangJamId], references: [id], onDelete: Cascade)
+
+  @@unique([moduleStudentClassId, hariId, rentangJamId], map: "module_student_class_schedules_unique_kelas_slot")
+  @@index([hariId], map: "module_student_class_schedules_hari_id_index")
+  @@index([rentangJamId], map: "module_student_class_schedules_rentang_jam_id_index")
+  @@map("module_student_class_schedules")
+}
+
+model Quiz {
+  availableAt           DateTime?          @map("available_at") @db.Timestamp(0)
+  deadline              DateTime?          @db.Timestamp(0)
+  createdAt             DateTime?          @map("created_at") @db.Timestamp(0)
+  updatedAt             DateTime?          @map("updated_at") @db.Timestamp(0)
+  durasiMenit           Int?               @map("durasi_menit")
+  isAktif               Boolean            @default(true) @map("is_aktif")
+  judul                 String             @db.VarChar(255)
+  modulesStudentClassId BigInt             @map("modules_student_class_id")
+  posisi                Int
+  skorLulus             Int                @default(70) @map("skor_lulus")
+  id                    BigInt             @id @default(autoincrement())
+  sectionId             BigInt?            @map("section_id")
+  lessonId              BigInt?            @map("lesson_id")
+  attempts              QuizAttempt[]
+  questions             QuizQuestion[]
+  quizUsers             QuizUser[]
+  lesson                Lesson?            @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  moduleStudentClass    ModuleStudentClass @relation(fields: [modulesStudentClassId], references: [id], onDelete: Cascade)
+  section               Section?           @relation(fields: [sectionId], references: [id])
+
+  @@index([modulesStudentClassId], map: "quizzes_module_id_index")
+  @@index([sectionId], map: "quizzes_section_id_index")
+  @@index([lessonId], map: "quizzes_lesson_id_index")
+  @@map("quizzes")
+}
+
+model QuizAttempt {
+  questionOrder   String?            @map("question_order")
+  score           Int                @default(0)
+  isPassed        Boolean            @default(false) @map("is_passed")
+  startedAt       DateTime           @default(now()) @map("started_at") @db.Timestamp(0)
+  submittedAt     DateTime?          @map("submitted_at") @db.Timestamp(0)
+  durationSeconds Int                @default(0) @map("duration_seconds")
+  createdAt       DateTime?          @map("created_at") @db.Timestamp(0)
+  updatedAt       DateTime?          @map("updated_at") @db.Timestamp(0)
+  id              BigInt             @id @default(autoincrement())
+  quizId          BigInt             @map("quiz_id")
+  userId          BigInt             @map("user_id")
+  status          QuizAttemptsStatus
+  retakeRequested Boolean            @default(false) @map("retake_requested")
+  quiz            Quiz               @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  user            User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  answers         QuizUserAnswer[]
+
+  @@index([quizId], map: "quiz_attempts_quiz_id_index")
+  @@index([userId], map: "quiz_attempts_user_id_index")
+  @@map("quiz_attempts")
+}
+
+model QuizQuestion {
+  createdAt     DateTime?        @map("created_at") @db.Timestamp(0)
+  updatedAt     DateTime?        @map("updated_at") @db.Timestamp(0)
+  jawabanBenar  String?          @map("jawaban_benar") @db.VarChar(255)
+  opsiA         String           @map("opsi_a") @db.VarChar(255)
+  opsiB         String           @map("opsi_b") @db.VarChar(255)
+  opsiBenar     String           @map("opsi_benar") @db.VarChar(1)
+  opsiC         String           @map("opsi_c") @db.VarChar(255)
+  opsiD         String           @map("opsi_d") @db.VarChar(255)
+  pertanyaan    String
+  questionImage String?          @map("question_image")
+  id            BigInt           @id @default(autoincrement())
+  quizId        BigInt           @map("quiz_id")
+  quiz          Quiz             @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  answers       QuizUserAnswer[]
+
+  @@index([quizId], map: "quiz_questions_quiz_id_index")
+  @@map("quiz_questions")
+}
+
+model QuizUser {
+  id        BigInt    @id @default(autoincrement())
+  userId    BigInt    @map("user_id")
+  quizId    BigInt    @map("quiz_id")
+  score     Int?
+  isPassed  Boolean   @default(false) @map("is_passed")
+  createdAt DateTime? @map("created_at") @db.Timestamp(0)
+  updatedAt DateTime? @map("updated_at") @db.Timestamp(0)
+  quiz      Quiz      @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "quiz_user_user_id_index")
+  @@index([quizId], map: "quiz_user_quiz_id_index")
+  @@map("quiz_user")
+}
+
+model QuizUserAnswer {
+  selectedOption String       @map("selected_option") @db.Char(1)
+  isCorrect      Boolean?     @default(false) @map("is_correct")
+  createdAt      DateTime?    @map("created_at") @db.Timestamp(0)
+  updatedAt      DateTime?    @map("updated_at") @db.Timestamp(0)
+  id             BigInt       @id @default(autoincrement())
+  quizAttemptId  BigInt       @map("quiz_attempt_id")
+  quizQuestionId BigInt       @map("quiz_question_id")
+  userId         BigInt       @map("user_id")
+  attempt        QuizAttempt  @relation(fields: [quizAttemptId], references: [id], onDelete: Cascade)
+  question       QuizQuestion @relation(fields: [quizQuestionId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([quizAttemptId], map: "quiz_user_answers_quiz_attempt_id_index")
+  @@index([quizQuestionId], map: "quiz_user_answers_quiz_question_id_index")
+  @@index([userId], map: "quiz_user_answers_user_id_index")
+  @@map("quiz_user_answers")
+}
+
+model RentangJam {
+  id         BigInt                       @id @default(autoincrement())
+  jamMulai   DateTime                     @map("jam_mulai") @db.Time(0)
+  jamSelesai DateTime                     @map("jam_selesai") @db.Time(0)
+  createdAt  DateTime?                    @map("created_at") @db.Timestamp(0)
+  updatedAt  DateTime?                    @map("updated_at") @db.Timestamp(0)
+  schedules  ModuleStudentClassSchedule[]
+
+  @@unique([jamMulai, jamSelesai], map: "rentang_jams_jam_mulai_unique")
+  @@map("rentang_jams")
+}
+
+model Section {
+  createdAt            DateTime?          @map("created_at") @db.Timestamp(0)
+  updatedAt            DateTime?          @map("updated_at") @db.Timestamp(0)
+  judul                String             @db.VarChar(255)
+  moduleStudentClassId BigInt             @map("module_student_class_id")
+  urutan               Int
+  id                   BigInt             @id @default(autoincrement())
+  lessons              Lesson[]
+  tasks                Task[]
+  quizzes              Quiz[]
+  moduleStudentClass   ModuleStudentClass @relation(fields: [moduleStudentClassId], references: [id], onDelete: Cascade)
+
+  @@index([moduleStudentClassId], map: "sections_module_id_index")
+  @@map("sections")
+}
+
+model Account {
+  id                    String    @id @db.VarChar(255)
+  userId                BigInt    @map("user_id")
+  accountId             String    @map("account_id") @db.VarChar(255)
+  providerId            String    @map("provider_id") @db.VarChar(255)
+  accessToken           String?   @map("access_token")
+  refreshToken          String?   @map("refresh_token")
+  accessTokenExpiresAt  DateTime? @map("access_token_expires_at") @db.Timestamp(0)
+  refreshTokenExpiresAt DateTime? @map("refresh_token_expires_at") @db.Timestamp(0)
+  scope                 String?
+  idToken               String?   @map("id_token")
+  password              String?   @db.VarChar(255)
+  createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt             DateTime  @updatedAt @map("updated_at") @db.Timestamp(0)
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, accountId], map: "accounts_provider_id_account_id_key")
+  @@index([userId], map: "accounts_user_id_index")
+  @@map("auth_accounts")
+}
+
+model Session {
+  id        String   @id @db.VarChar(255)
+  userId    BigInt   @map("user_id")
+  token     String   @unique @db.VarChar(255)
+  expiresAt DateTime @map("expires_at") @db.Timestamp(0)
+  ipAddress String?  @map("ip_address") @db.VarChar(45)
+  userAgent String?  @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamp(0)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "auth_sessions_user_id_index")
+  @@index([expiresAt], map: "auth_sessions_expires_at_index")
+  @@map("auth_sessions")
+}
+
+model Verification {
+  id         String   @id @db.VarChar(255)
+  identifier String   @db.VarChar(255)
+  value      String
+  expiresAt  DateTime @map("expires_at") @db.Timestamp(0)
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamp(0)
+
+  @@index([identifier], map: "auth_verifications_identifier_index")
+  @@index([expiresAt], map: "auth_verifications_expires_at_index")
+  @@map("auth_verifications")
+}
+
+model Student {
+  nisn                   String            @db.VarChar(255)
+  email                  String?           @unique @db.VarChar(255)
+  createdAt              DateTime?         @map("created_at") @db.Timestamp(0)
+  updatedAt              DateTime?         @map("updated_at") @db.Timestamp(0)
+  agama                  String?           @db.VarChar(30)
+  emailTerverifikasiPada DateTime?         @map("email_terverifikasi_pada") @db.Timestamp(0)
+  foto                   String?           @db.VarChar(255)
+  hpOrangTua             String?           @map("hp_orang_tua") @db.VarChar(20)
+  jenisKelamin           JenisKelaminEnum? @map("jenis_kelamin")
+  jurusanId              BigInt?           @map("jurusan_id")
+  kelasId                BigInt?           @map("kelas_id")
+  kodeOtp                String?           @map("kode_otp") @db.VarChar(255)
+  nama                   String            @db.VarChar(255)
+  namaOrangTua           String?           @map("nama_orang_tua") @db.VarChar(150)
+  nis                    String?           @db.VarChar(30)
+  otpKedaluwarsa         DateTime?         @map("otp_kedaluwarsa") @db.Timestamp(0)
+  tanggalLahir           DateTime?         @map("tanggal_lahir") @db.Date
+  tempatLahir            String?           @map("tempat_lahir") @db.VarChar(100)
+  tingkatId              BigInt?           @map("tingkat_id")
+  id                     BigInt            @id @default(autoincrement())
+  userId                 BigInt            @map("user_id")
+  moduleLinks            ModuleStudent[]
+  jurusan                Department?       @relation(fields: [jurusanId], references: [id])
+  kelas                  StudentClass?     @relation(fields: [kelasId], references: [id])
+  tingkat                Tingkat?          @relation(fields: [tingkatId], references: [id])
+  user                   User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "students_user_id_index")
+  @@index([kelasId], map: "students_kelas_id_index")
+  @@index([jurusanId], map: "students_jurusan_id_index")
+  @@map("students")
+}
+
+model StudentClass {
+  createdAt         DateTime?            @map("created_at") @db.Timestamp(0)
+  updatedAt         DateTime?            @map("updated_at") @db.Timestamp(0)
+  jurusanId         BigInt?              @map("jurusan_id")
+  level             String?              @db.VarChar(255)
+  namaKelas         String               @map("nama_kelas") @db.VarChar(255)
+  tingkatId         BigInt               @map("tingkat_id")
+  id                BigInt               @id @default(autoincrement())
+  homeroomTeacherId BigInt?              @map("homeroom_teacher_id")
+  moduleLinks       ModuleStudentClass[]
+  homeroomTeacher   Teacher?             @relation(fields: [homeroomTeacherId], references: [id])
+  jurusan           Department?          @relation(fields: [jurusanId], references: [id], onUpdate: SetNull)
+  tingkat           Tingkat              @relation(fields: [tingkatId], references: [id], onDelete: Cascade)
+  students          Student[]
+
+  @@index([homeroomTeacherId], map: "student_classes_homeroom_teacher_id_index")
+  @@map("student_classes")
+}
+
+model Lesson {
+  createdAt            DateTime?            @map("created_at") @db.Timestamp(0)
+  updatedAt            DateTime?            @map("updated_at") @db.Timestamp(0)
+  durasi               Int?
+  judul                String               @db.VarChar(255)
+  konten               String
+  moduleStudentClassId BigInt               @map("module_student_class_id")
+  posisi               Int
+  tersediaPada         DateTime?            @map("tersedia_pada") @db.Date
+  tipeKonten           String               @default("text") @map("tipe_konten") @db.VarChar(255)
+  urlKonten            String?              @map("url_konten")
+  urutan               Int                  @default(1)
+  id                   BigInt               @id @default(autoincrement())
+  sectionId            BigInt?              @map("section_id")
+  status               String               @default("draft") @db.VarChar(20)
+  lessonUsers          LessonUser[]
+  lessonDurations      LessonUserDuration[]
+  moduleStudentClass   ModuleStudentClass   @relation(fields: [moduleStudentClassId], references: [id], onDelete: Cascade)
+  section              Section?             @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  quizzes              Quiz[]
+  tasks                Task[]
+
+  @@index([moduleStudentClassId], map: "lessons_module_id_index")
+  @@index([sectionId], map: "lessons_section_id_index")
+  @@map("lessons")
+}
+
+model LessonUser {
+  id          BigInt    @id @default(autoincrement())
+  userId      BigInt    @map("user_id")
+  lessonId    BigInt    @map("lesson_id")
+  isCompleted Boolean   @default(false) @map("is_completed")
+  createdAt   DateTime? @map("created_at") @db.Timestamp(0)
+  updatedAt   DateTime? @map("updated_at") @db.Timestamp(0)
+  lesson      Lesson    @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, lessonId], map: "lesson_user_user_id_lesson_id_unique")
+  @@index([lessonId], map: "lesson_user_lesson_id_index")
+  @@map("lesson_user")
+}
+
+model LessonUserDuration {
+  seconds   Int       @default(0)
+  createdAt DateTime? @map("created_at") @db.Timestamp(0)
+  updatedAt DateTime? @map("updated_at") @db.Timestamp(0)
+  id        BigInt    @id @default(autoincrement())
+  userId    BigInt    @map("user_id")
+  lessonId  BigInt    @map("lesson_id")
+  lesson    Lesson    @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, lessonId], map: "lesson_user_durations_user_id_lesson_id_unique")
+  @@index([lessonId], map: "lesson_user_durations_lesson_id_index")
+  @@map("lesson_user_durations")
+}
+
+model Task {
+  attachmentType        String?            @map("attachment_type") @db.VarChar(50)
+  attachmentPath        String?            @map("attachment_path") @db.VarChar(255)
+  deadline              DateTime           @db.Timestamp(0)
+  allowRevision         Boolean            @default(false) @map("allow_revision")
+  createdAt             DateTime?          @map("created_at") @db.Timestamp(0)
+  updatedAt             DateTime?          @map("updated_at") @db.Timestamp(0)
+  availableAt           DateTime?          @map("available_at") @db.Date
+  deskripsi             String?
+  isAktif               Boolean            @default(true) @map("is_aktif")
+  judul                 String             @db.VarChar(255)
+  modulesStudentClassId BigInt             @map("modules_student_class_id")
+  id                    BigInt             @id @default(autoincrement())
+  lessonId              BigInt?            @map("lesson_id")
+  posisi                Int                @default(1)
+  sectionId             BigInt?            @map("section_id")
+  status                String             @default("draft") @db.VarChar(20)
+  submitMethod          String             @default("link") @map("submit_method") @db.VarChar(20)
+  rubrics               TaskRubric[]
+  submissions           TaskSubmission[]
+  lesson                Lesson?            @relation(fields: [lessonId], references: [id], onDelete: SetNull)
+  moduleStudentClass    ModuleStudentClass @relation(fields: [modulesStudentClassId], references: [id], onDelete: Cascade)
+  section               Section?           @relation(fields: [sectionId], references: [id], onDelete: SetNull)
+
+  @@index([modulesStudentClassId], map: "tasks_module_id_index")
+  @@index([lessonId], map: "tasks_lesson_id_index")
+  @@index([sectionId], map: "tasks_section_id_index")
+  @@map("tasks")
+}
+
+model TaskSubmission {
+  submissionLink      String?                     @map("submission_link") @db.VarChar(255)
+  submissionFilePath  String?                     @map("submission_file_path") @db.VarChar(255)
+  submissionFileType  String?                     @map("submission_file_type") @db.VarChar(100)
+  submittedAt     DateTime?                   @map("submitted_at") @db.Timestamp(0)
+  teacherNote     String?                     @map("teacher_note")
+  createdAt       DateTime?                   @map("created_at") @db.Timestamp(0)
+  updatedAt       DateTime?                   @map("updated_at") @db.Timestamp(0)
+  id              BigInt                      @id @default(autoincrement())
+  taskId          BigInt                      @map("task_id")
+  userId          BigInt                      @map("user_id")
+  status          SubmissionStatus            @default(SUBMITTED)
+  score           Int?
+  teacherFeedback String?                     @map("teacher_feedback")
+  rubricScores    TaskSubmissionRubricScore[]
+  similarityCheck TaskSubmissionSimilarityCheck?
+  task            Task                        @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user            User                        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([taskId], map: "task_submissions_task_id_index")
+  @@index([userId], map: "task_submissions_user_id_index")
+  @@map("task_submissions")
+}
+
+model TaskSubmissionSimilarityCheck {
+  id                   BigInt         @id @default(autoincrement())
+  taskSubmissionId     BigInt         @unique @map("task_submission_id")
+  tenantId             String         @map("tenant_id") @db.VarChar(255)
+  externalId           String         @map("external_id") @db.VarChar(255)
+  similarityDocumentId String?        @map("similarity_document_id") @db.VarChar(255)
+  similarityJobId      String?        @map("similarity_job_id") @db.VarChar(255)
+  similarityStatus     String         @default("not_requested") @map("similarity_status") @db.VarChar(30)
+  providerStatus       String?        @map("provider_status") @db.VarChar(40)
+  maxSimilarity        Float          @default(0) @map("max_similarity")
+  similarityLevel      String?        @map("similarity_level") @db.VarChar(20)
+  revision             Int            @default(0)
+  retryCount           Int            @default(0) @map("retry_count")
+  nextRetryAt          DateTime?      @map("next_retry_at") @db.Timestamp(0)
+  lastSyncedAt         DateTime?      @map("last_synced_at") @db.Timestamp(0)
+  checkedAt            DateTime?      @map("checked_at") @db.Timestamp(0)
+  similarityError      String?        @map("similarity_error")
+  createdAt            DateTime       @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt            DateTime       @updatedAt @map("updated_at") @db.Timestamp(0)
+  submission           TaskSubmission @relation(fields: [taskSubmissionId], references: [id], onDelete: Cascade)
+
+  @@index([similarityStatus, nextRetryAt], map: "task_submission_similarity_checks_status_retry_index")
+  @@map("task_submission_similarity_checks")
+}
+
+model TaskRubric {
+  id               BigInt                      @id @default(autoincrement())
+  taskId           BigInt                      @map("task_id")
+  name             String                      @db.VarChar(255)
+  maxScore         Int                         @map("max_score")
+  urutan           Int                         @default(1)
+  createdAt        DateTime?                   @map("created_at") @db.Timestamp(0)
+  updatedAt        DateTime?                   @map("updated_at") @db.Timestamp(0)
+  task             Task                        @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  submissionScores TaskSubmissionRubricScore[]
+
+  @@index([taskId], map: "task_rubrics_task_id_index")
+  @@map("task_rubrics")
+}
+
+model TaskSubmissionRubricScore {
+  id           BigInt         @id @default(autoincrement())
+  submissionId BigInt         @map("submission_id")
+  rubricId     BigInt         @map("rubric_id")
+  score        Int?
+  createdAt    DateTime?      @map("created_at") @db.Timestamp(0)
+  updatedAt    DateTime?      @map("updated_at") @db.Timestamp(0)
+  rubric       TaskRubric     @relation(fields: [rubricId], references: [id], onDelete: Cascade)
+  submission   TaskSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+
+  @@unique([submissionId, rubricId], map: "task_submission_rubric_scores_unique")
+  @@index([submissionId], map: "task_submission_rubric_scores_submission_id_index")
+  @@map("task_submission_rubric_scores")
+}
+
+model Teacher {
+  nip                    String               @db.VarChar(255)
+  email                  String?              @unique @db.VarChar(255)
+  createdAt              DateTime?            @map("created_at") @db.Timestamp(0)
+  updatedAt              DateTime?            @map("updated_at") @db.Timestamp(0)
+  emailTerverifikasiPada DateTime?            @map("email_terverifikasi_pada") @db.Timestamp(0)
+  foto                   String?              @db.VarChar(255)
+  jenis                  String?              @db.VarChar(50)
+  jurusanId              BigInt?              @map("jurusan_id")
+  nama                   String               @db.VarChar(255)
+  otpCode                String?              @map("otp_code") @db.VarChar(255)
+  otpKedaluwarsa         DateTime?            @map("otp_kedaluwarsa") @db.Timestamp(0)
+  status                 String?              @db.VarChar(50)
+  id                     BigInt               @id @default(autoincrement())
+  userId                 BigInt               @map("user_id")
+  moduleClasses          ModuleStudentClass[]
+  moduleTeachers         ModuleTeacher[]
+  homeroomClasses        StudentClass[]
+  jurusan                Department?          @relation(fields: [jurusanId], references: [id])
+  user                   User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "teachers_user_id_index")
+  @@index([jurusanId], map: "teachers_jurusan_id_index")
+  @@map("teachers")
+}
+
+model Tingkat {
+  id             BigInt          @id @default(autoincrement())
+  name           String          @db.VarChar(50)
+  createdAt      DateTime?       @map("created_at") @db.Timestamp(0)
+  updatedAt      DateTime?       @map("updated_at") @db.Timestamp(0)
+  modules        Module[]
+  moduleTingkat  ModuleTingkat[]
+  studentClasses StudentClass[]
+  students       Student[]
+
+  @@map("tingkat")
+}
+
+model User {
+  name            String               @db.VarChar(255)
+  email           String?              @unique @db.VarChar(255)
+  emailVerified   Boolean              @default(false) @map("email_verified")
+  createdAt       DateTime?            @map("created_at") @db.Timestamp(0)
+  updatedAt       DateTime?            @map("updated_at") @db.Timestamp(0)
+  identifier      String?              @db.VarChar(255)
+  jurusan         String?              @db.VarChar(255)
+  nisn            String?              @db.VarChar(255)
+  password        String?              @db.VarChar(255)
+  image           String?              @map("photo") @db.VarChar(255)
+  id              BigInt               @id @default(autoincrement())
+  accounts        Account[]
+  sessions        Session[]
+  exports         Export[]
+  imports         Import[]
+  lessonUsers     LessonUser[]
+  lessonDurations LessonUserDuration[]
+  quizAttempts    QuizAttempt[]
+  quizUsers       QuizUser[]
+  quizUserAnswers QuizUserAnswer[]
+  students        Student[]
+  taskSubmissions TaskSubmission[]
+  teachers        Teacher[]
+
+  @@map("users")
+}
+
+/// Enum types as defined in `postgres_schema_indonesia.sql`
+enum SubmissionStatus {
+  SUBMITTED @map("submitted")
+  REVISED   @map("revised")
+  GRADED    @map("graded")
+
+  @@map("submission_status")
+}
+
+enum QuizAttemptsStatus {
+  ON_TIME @map("on_time")
+  LATE    @map("late")
+
+  @@map("quiz_attempts_status")
+}
+
+enum JenisKelaminEnum {
+  L @map("L")
+  P @map("P")
+
+  @@map("jenis_kelamin_enum")
+}

@@ -1,0 +1,183 @@
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap");
+@import "tailwindcss";
+
+:root {
+  --color-primary: #b42318;
+  --color-primary-strong: #8f1d16;
+  --color-primary-soft: #fee4df;
+  --color-accent: #f04438;
+  --color-ink: #172033;
+  --color-muted: #667085;
+  --color-line: #d9e0ea;
+  --color-canvas: #f6f7f9;
+  --color-surface: #ffffff;
+  --radius-panel: 14px;
+  --radius-control: 10px;
+  --shadow-panel: 0 14px 40px rgba(15, 23, 42, 0.08);
+  --workspace-page-bg: #f3f6fb;
+  --workspace-page-bg-soft: #eef2f7;
+  --workspace-surface: rgba(255, 255, 255, 0.94);
+  --workspace-surface-muted: rgba(248, 250, 252, 0.92);
+  --workspace-border-color: rgba(148, 163, 184, 0.2);
+
+  font-family:
+    "Poppins",
+    "Segoe UI",
+    sans-serif;
+  color: var(--color-ink);
+  background: var(--color-canvas);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 14.5px;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-size: 0.93rem;
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+  background:
+    radial-gradient(circle at top left, rgba(30, 41, 59, 0.05), transparent 22%),
+    radial-gradient(circle at bottom right, rgba(79, 70, 229, 0.06), transparent 20%),
+    linear-gradient(
+      180deg,
+      var(--workspace-page-bg) 0%,
+      var(--workspace-page-bg-soft) 100%
+    );
+  color: #0f172a;
+}
+
+@layer base {
+  a {
+    color: inherit;
+    cursor: pointer;
+    text-decoration: none;
+  }
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button:not(:disabled),
+select,
+summary,
+[role="button"] {
+  cursor: pointer;
+}
+
+button:disabled,
+select:disabled {
+  cursor: not-allowed;
+}
+
+::selection {
+  background: var(--color-primary-soft);
+  color: var(--color-primary-strong);
+}
+
+.akara-workspace-shell {
+  position: relative;
+  background:
+    radial-gradient(circle at top left, rgba(30, 41, 59, 0.05), transparent 22%),
+    radial-gradient(circle at bottom right, rgba(79, 70, 229, 0.06), transparent 20%),
+    linear-gradient(
+      180deg,
+      var(--workspace-page-bg) 0%,
+      var(--workspace-page-bg-soft) 100%
+    );
+}
+
+.akara-workspace-shell::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(148, 163, 184, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.07) 1px, transparent 1px);
+  background-size: 24px 24px;
+  mask-image: linear-gradient(180deg, rgba(15, 23, 42, 0.22), transparent 78%);
+}
+
+.akara-workspace-shell .akara-sidebar-link-active {
+  background: #020617 !important;
+  border-color: #020617 !important;
+  color: #ffffff !important;
+}
+
+.akara-workspace-shell .akara-sidebar-link-active svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+.akara-workspace-shell .akara-sidebar-link-active span:first-child {
+  background: rgba(255, 255, 255, 0.14) !important;
+  color: #ffffff !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+}
+
+.surface-card {
+  border: 1px solid var(--workspace-border-color);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 12px 36px -32px rgba(15, 23, 42, 0.2);
+  backdrop-filter: blur(8px);
+}
+
+.surface-panel {
+  border: 1px solid var(--workspace-border-color);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(8px);
+}
+
+.section-title {
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  color: #020617;
+}
+
+.eyebrow {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.dashboard-panel {
+  border: 1px solid var(--workspace-border-color);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 12px 38px -34px rgba(15, 23, 42, 0.18);
+  backdrop-filter: blur(16px);
+}
+
+.dashboard-panel-muted {
+  border: 1px solid var(--workspace-border-color);
+  border-radius: 16px;
+  background: rgba(248, 250, 252, 0.9);
+}
+
+.panel-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #64748b;
+}

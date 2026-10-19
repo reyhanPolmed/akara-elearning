@@ -1,0 +1,297 @@
+@baseUrl = http://localhost:3001
+@contentType = application/json
+@csrfToken = dev-csrf-token
+
+# Data seed: student@akara.sch.id / Password123!
+# Token ini berasal dari prisma/seed.sql agar endpoint protected bisa dites langsung.
+@sessionToken = token-student-active
+@email = student@akara.sch.id
+@password = Password123!
+
+# ID seed yang aman untuk user student@akara.sch.id.
+@moduleId = 1
+@lessonId = 1
+@quizId = 1
+@taskId = 3
+
+# Catatan pemakaian:
+# 1. Jalankan server dengan `npm run dev` sebelum menjalankan request.
+# 2. Untuk request protected, seed database harus sudah dimuat.
+# 3. Jika session seed sudah invalid karena logout, jalankan request Login lalu gunakan cookie dari REST Client cookie jar.
+# 4. Jika CSRF aktif, header X-CSRF-TOKEN harus sama dengan cookie XSRF-TOKEN.
+
+### Health check
+# @name health
+GET {{baseUrl}}/health
+
+> {%
+client.test("Health returns 200", function () {
+  client.assert(response.status === 200, "Expected status 200");
+});
+%}
+
+### Issue CSRF cookie
+# @name csrfCookie
+GET {{baseUrl}}/api/csrf-cookie
+
+> {%
+client.test("CSRF cookie returns 204", function () {
+  client.assert(response.status === 204, "Expected status 204");
+});
+%}
+
+### Login
+# @name login
+POST {{baseUrl}}/login
+Content-Type: {{contentType}}
+Cookie: XSRF-TOKEN={{csrfToken}}
+X-CSRF-TOKEN: {{csrfToken}}
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+> {%
+client.test("Login returns 200", function () {
+  client.assert(response.status === 200, "Expected status 200");
+});
+%}
+
+### Current user
+# @name currentUser
+GET {{baseUrl}}/api/user
+Cookie: better-auth.session_token={{sessionToken}}
+
+> {%
+client.test("Current user returns 200", function () {
+  client.assert(response.status === 200, "Expected status 200");
+});
+%}
+
+### Dashboard
+# @name dashboard
+GET {{baseUrl}}/api/dashboard
+Cookie: better-auth.session_token={{sessionToken}}
+
+> {%
+client.test("Dashboard returns 200", function () {
+  client.assert(response.status === 200, "Expected status 200");
+});
+%}
+
+### List modules
+# @name listModules
+GET {{baseUrl}}/api/modules
+Cookie: better-auth.session_token={{sessionToken}}
+
+> {%
+client.test("List modules returns 200", function () {
+  client.assert(response.status === 200, "Expected status 200");
+});
+%}
+
+### Module detail
+# @name moduleDetail
+GET {{baseUrl}}/api/modules/{{moduleId}}
+Cookie: better-auth.session_token={{sessionToken}}
+
+> {%
+client.test("Module detail returns 200", function () {
+  client.assert(response.status === 200, "Expected status 200");
+});
+%}
+
+### List courses
+# @name listCourses
+GET {{baseUrl}}/api/courses
+Cookie: better-auth.session_token={{sessionToken}}
+
+> {%
+client.test("List courses returns 200", function () {
+  client.assert(response.status === 200, "Expected status 200");
+});
+%}
+
+### Lesson detail
+# @name lessonDetail
+GET {{baseUrl}}/api/lessons/{{lessonId}}
+Cookie: better-auth.session_token={{sessionToken}}
+
+> {%
+client.test("Lesson detail returns 200", function () {
+  client.assert(response.status === 200, "Expected status 200");
+});
+%}
+
+### Track lesson duration
+# @name trackLessonDuration
+POST {{baseUrl}}/api/lessons/{{lessonId}}/duration
+Content-Type: {{contentType}}
+Cookie: better-auth.session_token={{sessionToken}}; XSRF-TOKEN={{csrfToken}}
+X-CSRF-TOKEN: {{csrfToken}}
+
+{
+  "seconds": 120
+}
+
+> {%
+client.test("Track lesson duration returns 200", function () {
+  client.assert(response.status === 200, "Expected status 200");
+});
+%}
+
+### Complete lesson
+# @name completeLesson
+POST {{baseUrl}}/api/lessons/{{lessonId}}/complete
+Content-Type: {{contentType}}
+Cookie: better-auth.session_token={{sessionToken}}; XSRF-TOKEN={{csrfToken}}
+X-CSRF-TOKEN: {{csrfToken}}
+
+{}
+
+> {%
+client.test("Complete lesson returns 200", function () {
+  client.assert(response.status === 200, "Expected status 200");
+});
+%}
+
+### Quiz detail
+# @name quizDetail
+GET {{baseUrl}}/api/quizzes/{{quizId}}
+Cookie: better-auth.session_token={{sessionToken}}
+
+> {%
+client.test("Quiz detail returns 200", function () {
+  client.assert(response.status === 200, "Expected status 200");
+});
+%}
+
+### Start quiz
+# @name startQuiz
+POST {{baseUrl}}/api/quizzes/{{quizId}}/start
+Content-Type: {{contentType}}
+Cookie: better-auth.session_token={{sessionToken}}; XSRF-TOKEN={{csrfToken}}
+X-CSRF-TOKEN: {{csrfToken}}
+
+{}
+
+> {%
+client.test("Start quiz returns 200", function () {
+  client.assert(response.status === 200, "Expected status 200");
+});
+%}
+
+### Submit quiz
+# @name submitQuiz
+POST {{baseUrl}}/api/quizzes/{{quizId}}/submit
+Content-Type: {{contentType}}
+Cookie: better-auth.session_token={{sessionToken}}; XSRF-TOKEN={{csrfToken}}
+X-CSRF-TOKEN: {{csrfToken}}
+
+{
+  "answers": {
+    "1": "A",
+    "2": "B"
+  },
+  "fullscreenViolation": false
+}
+
+> {%
+client.test("Submit quiz returns 200", function () {
+  client.assert(response.status === 200, "Expected status 200");
+});
+%}
+
+### Quiz result
+# @name quizResult
+GET {{baseUrl}}/api/quizzes/{{quizId}}/result
+Cookie: better-auth.session_token={{sessionToken}}
+
+> {%
+client.test("Quiz result returns 200", function () {
+  client.assert(response.status === 200, "Expected status 200");
+});
+%}
+
+### Task detail
+# @name taskDetail
+GET {{baseUrl}}/api/tasks/{{taskId}}
+Cookie: better-auth.session_token={{sessionToken}}
+
+> {%
+client.test("Task detail returns 200", function () {
+  client.assert(response.status === 200, "Expected status 200");
+});
+%}
+
+### Submit task
+# @name submitTask
+POST {{baseUrl}}/api/tasks/{{taskId}}/submit
+Content-Type: {{contentType}}
+Cookie: better-auth.session_token={{sessionToken}}; XSRF-TOKEN={{csrfToken}}
+X-CSRF-TOKEN: {{csrfToken}}
+
+{
+  "submission_link": "https://drive.example.com/andi-flowchart-updated"
+}
+
+> {%
+client.test("Submit task returns 200", function () {
+  client.assert(response.status === 200, "Expected status 200");
+});
+%}
+
+### Update profile
+# @name updateProfile
+PUT {{baseUrl}}/api/profile
+Content-Type: {{contentType}}
+Cookie: better-auth.session_token={{sessionToken}}; XSRF-TOKEN={{csrfToken}}
+X-CSRF-TOKEN: {{csrfToken}}
+
+{
+  "name": "Andi Pratama",
+  "email": "andi@akara.test",
+  "phone": "081200000001",
+  "bio": "Siswa RPL yang sedang belajar backend."
+}
+
+> {%
+client.test("Update profile returns 200", function () {
+  client.assert(response.status === 200, "Expected status 200");
+});
+%}
+
+### Change password
+# @name changePassword
+POST {{baseUrl}}/api/profile/change-password
+Content-Type: {{contentType}}
+Cookie: better-auth.session_token={{sessionToken}}; XSRF-TOKEN={{csrfToken}}
+X-CSRF-TOKEN: {{csrfToken}}
+
+{
+  "currentPassword": "Password123!",
+  "newPassword": "Password123!",
+  "confirmPassword": "Password123!"
+}
+
+> {%
+client.test("Change password returns 200", function () {
+  client.assert(response.status === 200, "Expected status 200");
+});
+%}
+
+### Logout (run last if using the seed session token)
+# @name logout
+POST {{baseUrl}}/logout
+Content-Type: {{contentType}}
+Cookie: better-auth.session_token={{sessionToken}}; XSRF-TOKEN={{csrfToken}}
+X-CSRF-TOKEN: {{csrfToken}}
+
+{}
+
+> {%
+client.test("Logout returns 200", function () {
+  client.assert(response.status === 200, "Expected status 200");
+});
+%}
